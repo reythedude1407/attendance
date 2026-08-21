@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Attendance">
+<meta name="theme-color" content="#EBEEF1">
+<title>Attendance</title>
+<style>
+  :root{
+    --paper:#EBEEF1; --card:#FFFFFF; --ink:#0F1720; --muted:#68737F;
+    --line:#D4DAE0; --faint:#DCE1E6;
+    --office:#0B6E63; --wfh:#3B4CB8; --leave:#8B95A0; --holiday:#C4CBD3;
+    --alert:#B4462E;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0D1319; --card:#151C24; --ink:#E7ECF1; --muted:#8A96A3;
+      --line:#26313C; --faint:#1E2831; --holiday:#33404C;
+      --office:#2AA394; --wfh:#6D7FE8; --leave:#6D7A87; --alert:#E0765A;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+  body{padding:max(14px,env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+       max-width:520px;margin:0 auto;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;touch-action:manipulation}
+  .eyebrow{display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+  .hero{margin:10px 0 0;display:flex;align-items:flex-end;gap:12px}
+  .big{font-family:var(--mono);font-size:58px;line-height:.85;font-weight:600;letter-spacing:-.04em}
+  .big.done{color:var(--office)}
+  .big.miss{color:var(--alert)}
+  .hero p{margin:0 0 4px;font-size:14px;line-height:1.35;color:var(--muted)}
+  .hero p b{display:block;color:var(--ink);font-weight:600}
+
+  .meter{margin:20px 0 0}
+  .strip{display:flex;gap:1px;height:30px}
+  .seg{flex:1;min-width:0;background:var(--faint);border-radius:1px}
+  .seg.office{background:var(--office)}
+  .seg.wfh{background:var(--wfh)}
+  .seg.past{background:var(--line)}
+  .bracket{position:relative;height:22px;margin-top:5px}
+  .span{position:absolute;left:0;top:0;height:8px;
+    border-left:1px solid var(--muted);border-right:1px solid var(--muted);border-top:1px solid var(--muted);
+    transition:width .35s cubic-bezier(.2,.8,.2,1)}
+  .span b{position:absolute;right:0;top:9px;transform:translateX(50%);
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;background:var(--paper);padding:0 4px}
+  .tally{margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+  .tally b{color:var(--ink);font-weight:600}
+
+  .today{margin:18px 0;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+  .today .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);display:block;margin-bottom:9px}
+  .picks{display:flex;gap:6px}
+  .picks button{flex:1;height:38px;border-radius:8px;border:1px solid var(--line);
+    font-size:13px;font-weight:500;background:var(--card)}
+  .picks button:active{transform:scale(.97)}
+  .picks button.on{color:#fff;border-color:transparent}
+  .picks button.on.office{background:var(--office)}
+  .picks button.on.wfh{background:var(--wfh)}
+  .picks button.on.leave{background:var(--leave)}
+
+  .mbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+  h2{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:-.02em;margin:0;text-transform:uppercase}
+  h2 .yr{color:var(--muted);font-weight:400}
+  .nav{display:flex;gap:4px}
+  .nav button{font-family:var(--mono);width:34px;height:30px;border:1px solid var(--line);
+    border-radius:8px;background:var(--card);font-size:14px;line-height:1}
+  .nav button:active{background:var(--faint)}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;font-family:var(--mono);
+    font-size:10px;color:var(--muted);text-align:center;letter-spacing:.08em;margin-bottom:6px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cell{position:relative;aspect-ratio:1/1.05;border-radius:9px;background:var(--card);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .cell.pad{background:none;border-color:transparent}
+  .cell .n{position:absolute;top:4px;left:5px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .cell .code{font-family:var(--mono);font-size:15px;font-weight:600}
+  .cell.we{background:var(--faint);border-color:transparent}
+  .cell.today{border-color:var(--ink);border-width:1.5px}
+  .cell.office,.cell.wfh{border-color:transparent}
+  .cell.office{background:var(--office)}
+  .cell.wfh{background:var(--wfh)}
+  .cell.office .n,.cell.wfh .n{color:rgba(255,255,255,.7)}
+  .cell.office .code,.cell.wfh .code{color:#fff}
+  .cell.leave .code{color:var(--leave)}
+  .cell.holiday{background:repeating-linear-gradient(-45deg,transparent,transparent 4px,var(--holiday) 4px,var(--holiday) 5px)}
+  .cell.holiday .code{color:var(--muted)}
+  .cell:active{opacity:.6}
+
+  .key{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .key span{display:flex;align-items:center;gap:5px}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .hint{font-size:11.5px;color:var(--muted);margin:9px 0 0;line-height:1.5}
+
+  .year{margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .qrow{display:grid;grid-template-columns:26px 1fr 42px;gap:10px;align-items:center;
+    width:100%;padding:9px 0;text-align:left;border-bottom:1px solid var(--line)}
+  .qrow:last-of-type{border-bottom:none}
+  .qrow .q{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted)}
+  .qrow.sel .q{color:var(--ink)}
+  .qrow .track{position:relative;height:16px;background:var(--faint);border-radius:3px;overflow:hidden}
+  .qrow .fill{position:absolute;left:0;top:0;bottom:0;background:var(--office);
+    transition:width .35s cubic-bezier(.2,.8,.2,1)}
+  .qrow .fill.miss{background:var(--alert)}
+  .qrow .tick{position:absolute;top:-2px;bottom:-2px;width:1.5px;background:var(--ink);opacity:.55}
+  .qrow .pc{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right}
+  .qrow .pc.dim{color:var(--muted);font-weight:400}
+  .qmeta{font-family:var(--mono);font-size:10.5px;color:var(--muted);grid-column:2/4;margin-top:-3px}
+
+  /* charts */
+  .chart{margin-top:24px}
+  .ctitle{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between}
+  .plot{position:relative;height:104px;display:flex;gap:4px;align-items:flex-end}
+  .plot.mix{height:84px}
+  .col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;
+    gap:1px;position:relative;padding:0}
+  .col .bar{width:100%;border-radius:2px 2px 0 0;background:var(--office);
+    transition:height .35s cubic-bezier(.2,.8,.2,1)}
+  .col .bar.miss{background:var(--alert)}
+  .col .bar.none{background:var(--faint);border-radius:2px}
+  .col .s{width:100%;transition:height .3s ease}
+  .col .s.office{background:var(--office)}
+  .col .s.wfh{background:var(--wfh)}
+  .col .s.leave{background:var(--leave)}
+  .col .s:first-child{border-radius:2px 2px 0 0}
+  .col.cur:after{content:'';position:absolute;inset:-3px -2px;border:1px solid var(--muted);
+    border-radius:4px;opacity:.6;pointer-events:none}
+  .gline{position:absolute;left:0;right:0;border-top:1px dashed var(--muted);opacity:.75;pointer-events:none}
+  .gline b{position:absolute;right:0;top:-13px;font-family:var(--mono);font-size:9.5px;
+    color:var(--muted);background:var(--paper);padding:0 3px;letter-spacing:.05em}
+  .xlab{display:flex;gap:4px;margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .xlab span{flex:1;text-align:center}
+  .xlab span.cur{color:var(--ink);font-weight:600}
+
+  .set{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .set label{font-size:13px}
+  .stepper{display:flex;align-items:center}
+  .stepper button{width:34px;height:32px;border:1px solid var(--line);background:var(--card);
+    font-family:var(--mono);font-size:15px;line-height:1}
+  .stepper button:first-child{border-radius:8px 0 0 8px}
+  .stepper button:last-child{border-radius:0 8px 8px 0}
+  .stepper b{font-family:var(--mono);width:46px;text-align:center;font-size:14px;
+    border-block:1px solid var(--line);height:32px;line-height:32px;background:var(--card)}
+  .io{display:flex;gap:8px;margin-top:16px}
+  .io button{flex:1;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--card);font-size:13px}
+  .io button:active{background:var(--faint)}
+  .note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.55}
+  .warn{color:var(--alert);font-weight:500}
+  :focus-visible{outline:2px solid var(--office);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="eyebrow"><span id="qName">Q3</span><span id="qRange">Jul — Sep</span></div>
+
+<div class="hero">
+  <div class="big" id="heroNum">0</div>
+  <p><b id="heroLine">office days still needed</b><span id="heroSub"></span></p>
+</div>
+
+<div class="meter">
+  <div class="strip" id="strip"></div>
+  <div class="bracket"><div class="span" id="span"><b id="spanLabel"></b></div></div>
+  <div class="tally" id="tally"></div>
+</div>
+
+<div class="today">
+  <span class="lbl" id="todayLabel">Today</span>
+  <div class="picks">
+    <button data-set="office">Office</button>
+    <button data-set="wfh">WFH</button>
+    <button data-set="leave">Leave</button>
+  </div>
+</div>
+
+<div class="mbar">
+  <h2 id="title">—</h2>
+  <div class="nav">
+    <button id="prev" aria-label="Previous month">‹</button>
+    <button id="now" aria-label="This month">•</button>
+    <button id="next" aria-label="Next month">›</button>
+  </div>
+</div>
+<div class="dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+<div class="grid" id="grid"></div>
+
+<div class="key">
+  <span><i class="dot" style="background:var(--office)"></i>O office</span>
+  <span><i class="dot" style="background:var(--wfh)"></i>W wfh</span>
+  <span><i class="dot" style="background:var(--leave)"></i>L leave</span>
+  <span><i class="dot" style="background:var(--holiday)"></i>H holiday</span>
+</div>
+<p class="hint">Tap a day to cycle: office → WFH → leave → holiday → blank. Office earns attendance, WFH doesn't, leave and holidays come out of the total.</p>
+
+<div class="year">
+  <div class="mbar">
+    <h2 id="yearTitle">2026</h2>
+    <div class="nav">
+      <button id="yPrev" aria-label="Previous year">‹</button>
+      <button id="yNext" aria-label="Next year">›</button>
+    </div>
+  </div>
+  <div id="quarters"></div>
+
+  <div class="chart">
+    <div class="ctitle"><span>Attendance by month</span><span id="avgLab"></span></div>
+    <div class="plot" id="plotPct"></div>
+    <div class="xlab" id="labPct"></div>
+  </div>
+
+  <div class="chart">
+    <div class="ctitle"><span>Days by month</span><span>office · wfh · leave</span></div>
+    <div class="plot mix" id="plotMix"></div>
+    <div class="xlab" id="labMix"></div>
+  </div>
+</div>
+
+<div class="set">
+  <label>Attendance target per quarter</label>
+  <div class="stepper">
+    <button id="tgtDown" aria-label="Lower target">−</button>
+    <b id="tgtVal">60%</b>
+    <button id="tgtUp" aria-label="Raise target">+</button>
+  </div>
+</div>
+
+<div class="io">
+  <button id="backup">Save to Files</button>
+  <button id="restore">Restore</button>
+  <input type="file" id="file" accept="application/json,.json" hidden>
+</div>
+
+<p class="note" id="note">Marks live in this browser on this phone. Save to Files puts a backup in iCloud Drive or On My iPhone — do it at each quarter end.</p>
+
+<script>
+(function(){
+  const KEY='attendance.v3';
+  const ORDER=['office','wfh','leave','holiday'];
+  const CODE={office:'O',wfh:'W',leave:'L',holiday:'H'};
+  const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const INI=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  let state={days:{},targetPct:60};
+
+  const pad=n=>String(n).padStart(2,'0');
+  const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const n0=new Date();
+  const today=new Date(n0.getFullYear(),n0.getMonth(),n0.getDate());
+  const todayKey=ymd(today);
+  let view={y:today.getFullYear(),m:today.getMonth()};
+
+  function migrate(days){ for(const k in days) if(days[k]==='remote') days[k]='wfh'; return days; }
+  function load(){
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(raw) state=Object.assign(state,JSON.parse(raw));
+      else{
+        const old=localStorage.getItem('attendance.v2')||localStorage.getItem('attendance.v1');
+        if(old){ const o=JSON.parse(old);
+          if(o&&o.days) state.days=o.days;
+          if(o&&o.targetPct!=null) state.targetPct=o.targetPct; }
+      }
+      state.days=migrate(state.days||{});
+    }catch(e){}
+  }
+  function save(){
+    try{ localStorage.setItem(KEY,JSON.stringify(state)); }
+    catch(e){ document.getElementById('note').innerHTML='<span class="warn">This browser is blocking storage, so marks disappear when the page closes.</span> Open the app from its own tab or home-screen icon.'; }
+  }
+  function cycle(k){
+    const i=ORDER.indexOf(state.days[k]);
+    if(i===ORDER.length-1) delete state.days[k]; else state.days[k]=ORDER[i+1];
+    save(); render();
+  }
+  function set(k,v){
+    if(state.days[k]===v) delete state.days[k]; else state.days[k]=v;
+    save(); render();
+  }
+  function counts(date,st){
+    const wd=date.getDay();
+    if(wd===0||wd===6) return st==='office'||st==='wfh';
+    return st!=='holiday' && st!=='leave';
+  }
+
+  function monthStats(y,m){
+    const dim=new Date(y,m+1,0).getDate();
+    let total=0,office=0,wfh=0,leave=0,marked=0;
+    for(let d=1;d<=dim;d++){
+      const date=new Date(y,m,d), st=state.days[ymd(date)];
+      if(st) marked++;
+      if(st==='leave') leave++;
+      if(counts(date,st)){ total++; if(st==='office')office++; else if(st==='wfh')wfh++; }
+    }
+    return {total,office,wfh,leave,marked,pct:total?Math.round(office/total*100):0};
+  }
+  function quarterStats(y,q){
+    const start=new Date(y,q*3,1), end=new Date(y,q*3+3,0);
+    const days=[];
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      const date=new Date(d), st=state.days[ymd(date)];
+      if(counts(date,st)) days.push({st,past:date<today});
+    }
+    const total=days.length, office=days.filter(d=>d.st==='office').length;
+    const required=Math.ceil(total*state.targetPct/100);
+    const left=days.filter(d=>!d.past).length;
+    return {q,start,end,days,total,office,required,left,elapsed:total-left,
+      need:Math.max(0,required-office), pct:total?Math.round(office/total*100):0,
+      over:end<today, started:start<=today};
+  }
+
+  function render(){
+    const q=Math.floor(view.m/3), S=quarterStats(view.y,q);
+    document.getElementById('qName').textContent='Q'+(q+1)+' '+view.y;
+    document.getElementById('qRange').textContent=
+      MON[S.start.getMonth()].slice(0,3)+' — '+MON[S.end.getMonth()].slice(0,3);
+
+    const num=document.getElementById('heroNum'),
+          line=document.getElementById('heroLine'),
+          sub=document.getElementById('heroSub');
+    if(!S.started){
+      num.textContent=S.required; num.className='big';
+      line.textContent='office days to plan for';
+      sub.textContent=S.total+' working days in this quarter at '+state.targetPct+'%.';
+    }else if(S.over){
+      num.textContent=S.pct+'%'; num.className='big '+(S.pct>=state.targetPct?'done':'miss');
+      line.textContent=S.pct>=state.targetPct?'target met':'below target';
+      sub.textContent=S.office+' office days out of '+S.total+'.';
+    }else if(S.need===0){
+      num.textContent='0'; num.className='big done';
+      line.textContent='you\u2019re there';
+      sub.textContent=S.office+' of '+S.required+' needed. Anything more is buffer.';
+    }else if(S.need>S.left){
+      num.textContent=S.need; num.className='big miss';
+      line.textContent='more than the days left';
+      sub.textContent='Only '+S.left+' working days remain, so '+state.targetPct+'% is out of reach — best case is '+
+        (S.total?Math.round((S.office+S.left)/S.total*100):0)+'%.';
+    }else{
+      num.textContent=S.need; num.className='big';
+      line.textContent=S.need===1?'more office day needed':'more office days needed';
+      sub.textContent='Attend '+S.need+' of the '+S.left+' days left — about '+
+        (Math.round(S.need/S.left*5*10)/10)+' days a week.';
+    }
+
+    const strip=document.getElementById('strip'); strip.innerHTML='';
+    S.days.forEach(d=>{
+      const e=document.createElement('div');
+      e.className='seg'+(d.st==='office'?' office':d.st==='wfh'?' wfh':d.past?' past':'');
+      strip.appendChild(e);
+    });
+    document.getElementById('span').style.width=S.total?(S.required/S.total*100)+'%':'0';
+    document.getElementById('spanLabel').textContent=state.targetPct+'% = '+S.required+' days';
+    document.getElementById('tally').innerHTML=
+      '<b>'+S.office+'</b> office of <b>'+S.elapsed+'</b> days so far &middot; <b>'+
+      (S.elapsed?Math.round(S.office/S.elapsed*100):0)+'%</b> standing<br>'+
+      '<b>'+S.total+'</b> working days this quarter &middot; <b>'+S.left+'</b> still ahead';
+
+    // calendar
+    document.getElementById('title').innerHTML=MON[view.m].slice(0,3)+' <span class="yr">'+view.y+'</span>';
+    const grid=document.getElementById('grid'); grid.innerHTML='';
+    const first=new Date(view.y,view.m,1), dim=new Date(view.y,view.m+1,0).getDate();
+    for(let i=0;i<(first.getDay()+6)%7;i++){
+      const p=document.createElement('div'); p.className='cell pad'; grid.appendChild(p);
+    }
+    for(let d=1;d<=dim;d++){
+      const date=new Date(view.y,view.m,d), k=ymd(date), st=state.days[k];
+      const we=date.getDay()===0||date.getDay()===6;
+      const c=document.createElement('button');
+      c.className='cell'+(we&&!st?' we':'')+(st?' '+st:'')+(k===todayKey?' today':'');
+      c.innerHTML='<span class="n">'+d+'</span>'+(st?'<span class="code">'+CODE[st]+'</span>':'');
+      c.setAttribute('aria-label',d+' '+MON[view.m]+(st?', '+st:''));
+      c.addEventListener('click',()=>cycle(k));
+      grid.appendChild(c);
+    }
+
+    // quarter rows
+    document.getElementById('yearTitle').textContent=view.y;
+    const box=document.getElementById('quarters'); box.innerHTML='';
+    for(let i=0;i<4;i++){
+      const Y=quarterStats(view.y,i);
+      const miss=Y.over&&Y.pct<state.targetPct;
+      const meta=!Y.started?(Y.total+' working days &middot; '+Y.required+' needed')
+        :Y.over?(Y.office+' of '+Y.total+' &middot; '+(miss?'short by '+(Y.required-Y.office):'met'))
+        :(Y.office+' of '+Y.total+' &middot; '+(Y.need?Y.need+' to go':'target met'));
+      const row=document.createElement('button');
+      row.className='qrow'+(i===q?' sel':'');
+      row.innerHTML='<span class="q">Q'+(i+1)+'</span>'+
+        '<span class="track"><span class="fill'+(miss?' miss':'')+'" style="width:'+Y.pct+'%"></span>'+
+        '<span class="tick" style="left:'+state.targetPct+'%"></span></span>'+
+        '<span class="pc'+(Y.started?'':' dim')+'">'+(Y.started?Y.pct+'%':'—')+'</span>'+
+        '<span class="qmeta">'+meta+'</span>';
+      row.addEventListener('click',()=>{ view.m=i*3; render(); window.scrollTo({top:0,behavior:'smooth'}); });
+      box.appendChild(row);
+    }
+
+    // chart 1 — attendance % by month
+    const months=[]; for(let m=0;m<12;m++) months.push(monthStats(view.y,m));
+    const p1=document.getElementById('plotPct'); p1.innerHTML='';
+    months.forEach((M,m)=>{
+      const col=document.createElement('button');
+      col.className='col'+(m===view.m?' cur':'');
+      const has=M.marked>0;
+      const b=document.createElement('div');
+      b.className='bar'+(has?(M.pct>=state.targetPct?'':' miss'):' none');
+      b.style.height=has?Math.max(2,M.pct)+'%':'2px';
+      col.appendChild(b);
+      col.setAttribute('aria-label',MON[m]+': '+(has?M.pct+'%':'no data'));
+      col.addEventListener('click',()=>{ view.m=m; render(); window.scrollTo({top:0,behavior:'smooth'}); });
+      p1.appendChild(col);
+    });
+    const g=document.createElement('div');
+    g.className='gline'; g.style.bottom=state.targetPct+'%';
+    g.innerHTML='<b>'+state.targetPct+'%</b>';
+    p1.appendChild(g);
+    const done=months.filter(M=>M.marked>0);
+    const tot=done.reduce((a,M)=>a+M.total,0), off=done.reduce((a,M)=>a+M.office,0);
+    document.getElementById('avgLab').textContent=tot?'year '+Math.round(off/tot*100)+'%':'';
+    document.getElementById('labPct').innerHTML=
+      INI.map((s,m)=>'<span class="'+(m===view.m?'cur':'')+'">'+s+'</span>').join('');
+
+    // chart 2 — day mix by month
+    const maxDays=Math.max(1,...months.map(M=>M.office+M.wfh+M.leave));
+    const p2=document.getElementById('plotMix'); p2.innerHTML='';
+    months.forEach((M,m)=>{
+      const col=document.createElement('button');
+      col.className='col'+(m===view.m?' cur':'');
+      [['office',M.office],['wfh',M.wfh],['leave',M.leave]].forEach(([cls,v])=>{
+        if(!v) return;
+        const s=document.createElement('div');
+        s.className='s '+cls; s.style.height=(v/maxDays*100)+'%';
+        col.appendChild(s);
+      });
+      col.setAttribute('aria-label',MON[m]+': '+M.office+' office, '+M.wfh+' wfh, '+M.leave+' leave');
+      col.addEventListener('click',()=>{ view.m=m; render(); window.scrollTo({top:0,behavior:'smooth'}); });
+      p2.appendChild(col);
+    });
+    document.getElementById('labMix').innerHTML=
+      INI.map((s,m)=>'<span class="'+(m===view.m?'cur':'')+'">'+s+'</span>').join('');
+
+    document.getElementById('todayLabel').textContent=
+      today.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+    document.querySelectorAll('.picks button').forEach(b=>{
+      b.className=state.days[todayKey]===b.dataset.set?'on '+b.dataset.set:'';
+    });
+    document.getElementById('tgtVal').textContent=state.targetPct+'%';
+  }
+
+  document.querySelectorAll('.picks button').forEach(b=>
+    b.addEventListener('click',()=>set(todayKey,b.dataset.set)));
+  document.getElementById('prev').addEventListener('click',()=>{
+    view.m--; if(view.m<0){view.m=11;view.y--;} render(); });
+  document.getElementById('next').addEventListener('click',()=>{
+    view.m++; if(view.m>11){view.m=0;view.y++;} render(); });
+  document.getElementById('now').addEventListener('click',()=>{
+    view={y:today.getFullYear(),m:today.getMonth()}; render(); });
+  document.getElementById('yPrev').addEventListener('click',()=>{ view.y--; render(); });
+  document.getElementById('yNext').addEventListener('click',()=>{ view.y++; render(); });
+  document.getElementById('tgtUp').addEventListener('click',()=>{
+    state.targetPct=Math.min(100,state.targetPct+5); save(); render(); });
+  document.getElementById('tgtDown').addEventListener('click',()=>{
+    state.targetPct=Math.max(0,state.targetPct-5); save(); render(); });
+
+  // Save to Files — share sheet on iOS, download elsewhere
+  document.getElementById('backup').addEventListener('click',async ()=>{
+    const json=JSON.stringify(state,null,2);
+    const name='attendance-'+todayKey+'.json';
+    try{
+      const f=new File([json],name,{type:'application/json'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){
+        await navigator.share({files:[f],title:'Attendance backup'});
+        return;
+      }
+    }catch(e){ if(e&&e.name==='AbortError') return; }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  });
+
+  document.getElementById('restore').addEventListener('click',()=>document.getElementById('file').click());
+  document.getElementById('file').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const inc=JSON.parse(r.result);
+        if(!inc||typeof inc.days!=='object') throw 0;
+        if(confirm('Merge '+Object.keys(inc.days).length+' marked days into this device? Same-date marks are replaced.')){
+          state.days=migrate(Object.assign(state.days,inc.days));
+          if(inc.targetPct!=null) state.targetPct=inc.targetPct;
+          save(); render();
+        }
+      }catch(err){ alert("That file isn't an attendance backup. Pick the .json you saved with Save to Files."); }
+      e.target.value='';
+    };
+    r.readAsText(f);
+  });
+
+  load(); render();
+})();
+</script>
+</body>
+</html>
