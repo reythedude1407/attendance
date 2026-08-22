@@ -77,6 +77,34 @@
   .nav button{font-family:var(--mono);width:34px;height:30px;border:1px solid var(--line);
     border-radius:8px;background:var(--card);font-size:14px;line-height:1}
 
+  /* forecast */
+  .fsub{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .ftrack{position:relative;height:22px;background:var(--faint);border-radius:4px;overflow:hidden;margin-top:4px}
+  .fach{position:absolute;left:0;top:0;bottom:0;background:var(--office)}
+  .fproj{position:absolute;top:0;bottom:0;background:var(--office);opacity:.32}
+  .fproj.miss{background:var(--alert);opacity:.34}
+  .ftick{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.55}
+  .fline{margin:10px 0 0;font-size:13px;line-height:1.5;color:var(--muted)}
+  .fline b{color:var(--ink);font-weight:600}
+  .fline.bad b{color:var(--alert)}
+  .fhead{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:22px 0 8px}
+  .frow{display:block;padding:9px 0;border-bottom:1px solid var(--line)}
+  .frow:last-child{border-bottom:none}
+  .ftop{display:flex;align-items:center;gap:10px}
+  .flab{font-family:var(--mono);font-size:12px;font-weight:600;width:32px;flex:none;color:var(--muted)}
+  .frow.cur .flab{color:var(--ink)}
+  .fbar{position:relative;flex:1;height:14px;background:var(--faint);border-radius:3px;overflow:hidden}
+  .fbar i{position:absolute;left:0;top:0;bottom:0;background:var(--office);display:block}
+  .fbar i.plan{opacity:.34}
+  .fbar i.miss{background:var(--alert)}
+  .fval{font-family:var(--mono);font-size:12.5px;font-weight:600;flex:none;text-align:right;min-width:58px}
+  .fval.dim{color:var(--muted);font-weight:400}
+  .fval.ok{color:var(--office)}
+  .fval.no{color:var(--alert)}
+  .fmeta{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:5px 0 0 42px}
+  .fnote{font-size:11.5px;color:var(--muted);margin:14px 0 0;line-height:1.5}
+
   .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;font-family:var(--mono);
     font-size:10px;color:var(--muted);text-align:center;letter-spacing:.08em;margin-bottom:6px}
   .grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:var(--cell);gap:5px}
@@ -182,24 +210,43 @@
   </div>
 </div>
 
-<div class="mbar">
-  <h2 class="mtitle" id="title">—</h2>
-  <div class="nav">
-    <button id="prev" aria-label="Previous month">‹</button>
-    <button id="now" aria-label="This month">•</button>
-    <button id="next" aria-label="Next month">›</button>
+<div class="section">
+  <div class="mbar">
+    <h2 class="mtitle">Forecast</h2>
+    <span class="fsub" id="fQlab">Q3</span>
   </div>
-</div>
-<div class="dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
-<div class="grid" id="grid"></div>
+  <div class="ftrack" id="ftrack"></div>
+  <p class="fline" id="trajLine"></p>
 
-<div class="key">
-  <span><i class="kdot" style="background:var(--office)"></i>O office</span>
-  <span><i class="kdot" style="background:var(--wfh)"></i>W wfh</span>
-  <span><i class="kdot" style="background:var(--leave)"></i>L leave</span>
-  <span><i class="kdot" style="background:var(--holiday)"></i>H holiday</span>
+  <div class="fhead" id="headMonths">Month by month</div>
+  <div id="monthRows"></div>
+
+  <div class="fhead" id="headScen">If you go in…</div>
+  <div id="scenRows"></div>
+
+  <p class="fnote" id="absLine"></p>
 </div>
-<p class="hint">Tap a day to cycle: office → WFH → leave → holiday → blank. Office earns attendance, WFH doesn't, leave and holidays come out of the total.</p>
+
+<div class="section">
+  <div class="mbar">
+    <h2 class="mtitle" id="title">—</h2>
+    <div class="nav">
+      <button id="prev" aria-label="Previous month">‹</button>
+      <button id="now" aria-label="This month">•</button>
+      <button id="next" aria-label="Next month">›</button>
+    </div>
+  </div>
+  <div class="dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="key">
+    <span><i class="kdot" style="background:var(--office)"></i>O office</span>
+    <span><i class="kdot" style="background:var(--wfh)"></i>W wfh</span>
+    <span><i class="kdot" style="background:var(--leave)"></i>L leave</span>
+    <span><i class="kdot" style="background:var(--holiday)"></i>H holiday</span>
+  </div>
+  <p class="hint">Tap a day to cycle: office → WFH → leave → holiday → blank. Mark leave and holidays ahead — the forecast plans around them.</p>
+</div>
 
 <div class="section">
   <div class="mbar">
@@ -239,7 +286,7 @@
   <input type="file" id="file" accept="application/json,.json" hidden>
 </div>
 
-<p class="note" id="note">Marks live in this browser on this phone. Save to Files puts a backup in iCloud Drive or On My iPhone — do it at each quarter end.</p>
+<p class="note" id="note">Marks live in this browser on this phone. Save to Files puts a backup in iCloud Drive or On My iPhone — do it monthly.</p>
 
 <script>
 (function(){
@@ -256,7 +303,7 @@
   var today=new Date(n0.getFullYear(),n0.getMonth(),n0.getDate());
   var todayKey=ymd(today);
   var view={y:today.getFullYear(),m:today.getMonth()};
-  var $=function(id){return document.getElementById(id);};
+  function $(id){return document.getElementById(id);}
 
   function migrate(d){ for(var k in d){ if(d[k]==='remote') d[k]='wfh'; } return d; }
   function load(){
@@ -292,14 +339,17 @@
   }
   function monthStats(y,m){
     var dim=new Date(y,m+1,0).getDate();
-    var total=0,office=0,wfh=0,leave=0,marked=0;
+    var total=0,office=0,wfh=0,leave=0,marked=0,left=0,hol=0;
     for(var d=1;d<=dim;d++){
       var date=new Date(y,m,d), st=state.days[ymd(date)];
+      var wd=date.getDay(), wk=(wd===0||wd===6);
       if(st) marked++;
       if(st==='leave') leave++;
-      if(counts(date,st)){ total++; if(st==='office')office++; else if(st==='wfh')wfh++; }
+      if(st==='holiday'&&!wk) hol++;
+      if(counts(date,st)){ total++; if(st==='office')office++; else if(st==='wfh')wfh++;
+        if(date>=today) left++; }
     }
-    return {total:total,office:office,wfh:wfh,leave:leave,marked:marked,
+    return {total:total,office:office,wfh:wfh,leave:leave,holiday:hol,marked:marked,left:left,
       pct: total?Math.round(office/total*100):0};
   }
   function quarterStats(y,q){
@@ -315,6 +365,137 @@
       left:left,elapsed:total-left,need:Math.max(0,required-office),
       pct: total?Math.round(office/total*100):0,
       over:end<today, started:start<=today};
+  }
+
+  // spread the needed days across remaining months, front-loading the remainder
+  function allocate(need,rem){
+    var i,out=[],totalRem=0;
+    for(i=0;i<rem.length;i++) totalRem+=rem[i];
+    if(totalRem<=0||need<=0){ for(i=0;i<rem.length;i++) out.push(0); return out; }
+    var used=0;
+    for(i=0;i<rem.length;i++){
+      var v=Math.floor(need*rem[i]/totalRem);
+      out.push(v); used+=v;
+    }
+    var extra=need-used, j=0;
+    while(extra>0){
+      if(out[j]<rem[j]){ out[j]++; extra--; }
+      j=(j+1)%rem.length;
+      if(j===0&&out.join()===rem.join()) break;
+    }
+    return out;
+  }
+
+  function renderForecast(q,S){
+    $('fQlab').textContent='Q'+(q+1)+' '+view.y+' · target '+state.targetPct+'%';
+
+    // trajectory bar
+    var achPct=S.total?S.office/S.total*100:0;
+    var pace=S.elapsed?S.office/S.elapsed:0;
+    var projOffice=Math.min(S.total,S.office+Math.round(pace*S.left));
+    var projPct=S.total?projOffice/S.total*100:0;
+    var t=$('ftrack');
+    t.innerHTML='<span class="fach" style="width:'+achPct+'%"></span>'+
+      '<span class="fproj'+(projPct<state.targetPct?' miss':'')+'" style="left:'+achPct+
+      '%;width:'+Math.max(0,projPct-achPct)+'%"></span>'+
+      '<span class="ftick" style="left:'+state.targetPct+'%"></span>';
+
+    var tl=$('trajLine');
+    if(!S.started){
+      tl.className='fline';
+      tl.innerHTML='Quarter hasn\u2019t started. <b>'+S.total+'</b> working days, <b>'+S.required+'</b> office days needed.';
+    }else if(S.over){
+      tl.className='fline'+(S.pct<state.targetPct?' bad':'');
+      tl.innerHTML='Finished at <b>'+S.pct+'%</b> — '+S.office+' of '+S.total+' days.';
+    }else if(S.elapsed===0){
+      tl.className='fline';
+      tl.innerHTML='No days logged yet. You need <b>'+S.required+'</b> of <b>'+S.left+'</b> working days.';
+    }else{
+      var slack=S.left-S.need;
+      tl.className='fline'+(Math.round(projPct)<state.targetPct?' bad':'');
+      tl.innerHTML='Current pace is <b>'+(Math.round(pace*5*10)/10)+' days a week</b>, landing at <b>'+
+        Math.round(projPct)+'%</b>. '+
+        (S.need===0
+          ? 'Target already secured.'
+          : (S.need>S.left
+              ? 'Not reachable — even attending every remaining day tops out at <b>'+
+                Math.round((S.office+S.left)/S.total*100)+'%</b>.'
+              : 'You can still miss <b>'+slack+'</b> of the '+S.left+' days left.'));
+    }
+
+    // month by month
+    var box=$('monthRows'); box.innerHTML='';
+    var mi, ms=[], rem=[];
+    for(mi=0;mi<3;mi++){
+      var M=monthStats(view.y,q*3+mi);
+      ms.push(M); rem.push(M.left);
+    }
+    var plan=allocate(Math.min(S.need,S.left),rem);
+    for(mi=0;mi<3;mi++){
+      (function(k){
+        var M=ms[k], m=q*3+k;
+        var isPast=M.left===0;
+        var row=document.createElement('button');
+        row.type='button';
+        row.className='frow'+(m===view.m?' cur':'');
+        var donePct=M.total?M.office/M.total*100:0;
+        var planPct=M.total?Math.min(100-donePct,plan[k]/M.total*100):0;
+        var val, meta;
+        if(M.total===0){ val='<span class="fval dim">—</span>'; meta='no working days'; }
+        else if(isPast){
+          val='<span class="fval '+(M.pct>=state.targetPct?'ok':'no')+'">'+M.pct+'%</span>';
+          meta=M.office+' office of '+M.total+' working days';
+        }else{
+          val='<span class="fval">'+plan[k]+' / '+M.left+'</span>';
+          meta=M.office+' done of '+M.total+' &middot; go in '+plan[k]+' of the '+M.left+' days left'+
+            (M.leave?' &middot; '+M.leave+' leave':'');
+        }
+        row.innerHTML='<span class="ftop"><span class="flab">'+MON[m].slice(0,3).toUpperCase()+'</span>'+
+          '<span class="fbar"><i style="width:'+donePct+'%"></i>'+
+          '<i class="plan" style="left:'+donePct+'%;width:'+planPct+'%"></i></span>'+val+'</span>'+
+          '<span class="fmeta">'+meta+'</span>';
+        row.onclick=function(){ view.m=m; render(); window.scrollTo(0,0); };
+        box.appendChild(row);
+      })(mi);
+    }
+
+    // scenarios
+    var sbox=$('scenRows'); sbox.innerHTML='';
+    var showScen=S.started&&!S.over&&S.left>0;
+    $('headScen').style.display=showScen?'':'none';
+    sbox.style.display=showScen?'':'none';
+    if(showScen){
+      var best=null;
+      for(var w=1;w<=5;w++){
+        var extra=Math.min(S.left,Math.round(S.left*w/5));
+        var fin=Math.round((S.office+extra)/S.total*100);
+        var ok=fin>=state.targetPct;
+        if(ok&&best===null) best=w;
+        var r=document.createElement('div');
+        r.className='frow';
+        r.innerHTML='<span class="ftop"><span class="flab">'+w+'/wk</span>'+
+          '<span class="fbar"><i class="'+(ok?'':'miss')+'" style="width:'+Math.min(100,fin)+'%"></i></span>'+
+          '<span class="fval '+(ok?'ok':'dim')+'">'+fin+'%</span></span>';
+        sbox.appendChild(r);
+      }
+      $('headScen').textContent=best
+        ? 'If you go in… ('+best+' a week is enough)'
+        : 'If you go in… (nothing reaches target)';
+    }
+
+    // planned absences
+    var lv=0,hl=0;
+    for(var d=new Date(today); d<=S.end; d.setDate(d.getDate()+1)){
+      var st=state.days[ymd(new Date(d))];
+      var wd=d.getDay();
+      if(wd===0||wd===6) continue;
+      if(st==='leave') lv++;
+      if(st==='holiday') hl++;
+    }
+    $('absLine').innerHTML = (lv||hl)
+      ? 'Planned ahead: <b>'+lv+'</b> leave, <b>'+hl+'</b> holiday'+(hl===1?'':'s')+
+        ' — already removed from the total, so the requirement above accounts for them.'
+      : 'No leave or holidays marked ahead. Add them on the calendar and the plan recalculates around them.';
   }
 
   function render(){
@@ -339,8 +520,7 @@
     }else if(S.need>S.left){
       num.textContent=S.need; num.className='bignum miss';
       line.textContent='more than the days left';
-      sub.textContent='Only '+S.left+' working days remain, so '+state.targetPct+'% is out of reach — best case is '+
-        (S.total?Math.round((S.office+S.left)/S.total*100):0)+'%.';
+      sub.textContent='Only '+S.left+' working days remain, so '+state.targetPct+'% is out of reach.';
     }else{
       num.textContent=S.need; num.className='bignum';
       line.textContent=S.need===1?'more office day needed':'more office days needed';
@@ -360,6 +540,8 @@
     $('tally').innerHTML='<b>'+S.office+'</b> office of <b>'+S.elapsed+'</b> days so far &middot; <b>'+
       (S.elapsed?Math.round(S.office/S.elapsed*100):0)+'%</b> standing<br><b>'+
       S.total+'</b> working days this quarter &middot; <b>'+S.left+'</b> still ahead';
+
+    renderForecast(q,S);
 
     // calendar
     $('title').innerHTML=MON[view.m].slice(0,3)+' <span class="yr">'+view.y+'</span>';
@@ -410,16 +592,16 @@
     var months=[]; for(i=0;i<12;i++) months.push(monthStats(view.y,i));
     var p1=$('plotPct'); p1.innerHTML='';
     for(i=0;i<12;i++){
-      (function(mi){
-        var M=months[mi], has=M.marked>0;
+      (function(m2){
+        var M=months[m2], has=M.marked>0;
         var col=document.createElement('button');
-        col.type='button'; col.className='col'+(mi===view.m?' cur':'');
+        col.type='button'; col.className='col'+(m2===view.m?' cur':'');
         var b=document.createElement('div');
         b.className='cbar'+(has?(M.pct>=state.targetPct?'':' miss'):' none');
         b.style.height=has?Math.max(2,M.pct)+'%':'3px';
         col.appendChild(b);
-        col.setAttribute('aria-label',MON[mi]+': '+(has?M.pct+'%':'no data'));
-        col.onclick=function(){ view.m=mi; render(); window.scrollTo(0,0); };
+        col.setAttribute('aria-label',MON[m2]+': '+(has?M.pct+'%':'no data'));
+        col.onclick=function(){ view.m=m2; render(); window.scrollTo(0,0); };
         p1.appendChild(col);
       })(i);
     }
@@ -436,10 +618,10 @@
     for(i=0;i<12;i++) maxDays=Math.max(maxDays,months[i].office+months[i].wfh+months[i].leave);
     var p2=$('plotMix'); p2.innerHTML='';
     for(i=0;i<12;i++){
-      (function(mi){
-        var M=months[mi];
+      (function(m3){
+        var M=months[m3];
         var col=document.createElement('button');
-        col.type='button'; col.className='col'+(mi===view.m?' cur':'');
+        col.type='button'; col.className='col'+(m3===view.m?' cur':'');
         var parts=[['office',M.office],['wfh',M.wfh],['leave',M.leave]];
         for(var j=0;j<parts.length;j++){
           if(!parts[j][1]) continue;
@@ -448,8 +630,8 @@
           s.style.height=(parts[j][1]/maxDays*100)+'%';
           col.appendChild(s);
         }
-        col.setAttribute('aria-label',MON[mi]+': '+M.office+' office, '+M.wfh+' wfh, '+M.leave+' leave');
-        col.onclick=function(){ view.m=mi; render(); window.scrollTo(0,0); };
+        col.setAttribute('aria-label',MON[m3]+': '+M.office+' office, '+M.wfh+' wfh, '+M.leave+' leave');
+        col.onclick=function(){ view.m=m3; render(); window.scrollTo(0,0); };
         p2.appendChild(col);
       })(i);
     }
@@ -466,9 +648,9 @@
     $('tgtVal').textContent=state.targetPct+'%';
   }
 
-  var picks=document.querySelectorAll('.picks button');
-  for(var pi=0;pi<picks.length;pi++){
-    (function(btn){ btn.onclick=function(){ setDay(todayKey,btn.getAttribute('data-set')); }; })(picks[pi]);
+  var pk=document.querySelectorAll('.picks button');
+  for(var pi=0;pi<pk.length;pi++){
+    (function(btn){ btn.onclick=function(){ setDay(todayKey,btn.getAttribute('data-set')); }; })(pk[pi]);
   }
   $('prev').onclick=function(){ view.m--; if(view.m<0){view.m=11;view.y--;} render(); };
   $('next').onclick=function(){ view.m++; if(view.m>11){view.m=0;view.y++;} render(); };
